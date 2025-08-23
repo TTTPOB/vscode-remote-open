@@ -88,18 +88,13 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    const fileWatcher = vscode.workspace.createFileSystemWatcher('**/*.{yaml,yml}');
-    fileWatcher.onDidChange(loadMappings);
-    fileWatcher.onDidCreate(loadMappings);
-    fileWatcher.onDidDelete(loadMappings);
-
-    vscode.workspace.onDidChangeConfiguration(e => {
+    const onDidChangeConfiguration = vscode.workspace.onDidChangeConfiguration(e => {
         if (e.affectsConfiguration('remote-open')) {
             loadMappings();
         }
     });
 
-    context.subscriptions.push(copyCommand, applyTransformerCommand, fileWatcher);
+    context.subscriptions.push(copyCommand, applyTransformerCommand, onDidChangeConfiguration);
 }
 
 export function deactivate() {}
