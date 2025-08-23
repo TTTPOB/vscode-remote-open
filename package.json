@@ -3,6 +3,7 @@
   "displayName": "remote-open",
   "description": "Open mapped path on local from remote file tab",
   "version": "0.0.1",
+  "publisher": "tttpob",
   "engines": {
     "vscode": "^1.103.0"
   },
@@ -107,7 +108,8 @@
     "esbuild": "^0.25.8",
     "eslint": "^9.32.0",
     "npm-run-all": "^4.1.5",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vsce": "^2.15.0"
   },
   "dependencies": {
     "js-yaml": "^4.1.0"
