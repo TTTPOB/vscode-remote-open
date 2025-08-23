@@ -1,0 +1,97 @@
+{
+  "name": "remote-open",
+  "displayName": "remote-open",
+  "description": "Open mapped path on local from remote file tab",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.103.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": ["*"],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "remote-open.copyMappedPath",
+        "title": "Remote Open: Copy Local Mapped Path"
+      },
+      {
+        "command": "remote-open.openMappedPath",
+        "title": "Remote Open: Open Local Mapped Path"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "when": "resourceScheme == 'vscode-remote'",
+          "command": "remote-open.copyMappedPath",
+          "group": "remote-open@1"
+        },
+        {
+          "when": "resourceScheme == 'vscode-remote'",
+          "command": "remote-open.openMappedPath",
+          "group": "remote-open@1"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Remote Open",
+      "properties": {
+        "remote-open.mappings": {
+          "type": "array",
+          "default": [],
+          "description": "An array of remote to local path mappings.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "remote": {
+                "type": "string"
+              },
+              "local": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "remote-open.mappingFilePath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to a YAML file containing remote to local path mappings."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run package",
+    "compile": "pnpm run check-types && pnpm run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "pnpm run check-types && pnpm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@types/vscode": "^1.103.0",
+    "@typescript-eslint/eslint-plugin": "^8.39.0",
+    "@typescript-eslint/parser": "^8.39.0",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2",
+    "esbuild": "^0.25.8",
+    "eslint": "^9.32.0",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}
