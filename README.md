@@ -1,71 +1,60 @@
-# remote-open README
+# Remote Open
 
-This is the README for your extension "remote-open". After writing up a brief description, we recommend including the following sections.
+This extension provides a flexible way to handle remote file paths by mapping them to your local machine. You can copy the local path directly or apply custom transformations to it, which can be used to trigger local scripts or open files in specific applications.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+*   **Copy Local Mapped Path:** Right-click on a file in a remote explorer and instantly copy its corresponding local path to your clipboard.
+*   **Custom Transformers:** Define your own rules to transform the mapped path into any string format you need. This is useful for integrating with local scripts or tools that monitor the clipboard.
 
-For example if there is an image subfolder under your extension project workspace:
+## Configuration
 
-\!\[feature X\]\(images/feature-x.png\)
+This extension contributes the following settings, which you can configure in your `settings.json` file:
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+*   `remote-open.mappings`: An array of remote-to-local path mappings.
+    ```json
+    "remote-open.mappings": [
+      {
+        "remote": "/home/user/project-a",
+        "local": "C:\\Users\\user\\dev\\project-a"
+      }
+    ]
+    ```
 
-## Requirements
+*   `remote-open.mappingFilePath`: Path to a YAML file containing additional path mappings. This is useful for sharing mappings across a team.
+    **Example `mappings.yaml`:**
+    ```yaml
+mappings:
+  - remote: "/var/www/html"
+    local: "C:\\Users\\user\\projects\\company-website"
+    ```
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+*   `remote-open.transformers`: An array of custom transformation rules.
+    ```json
+    "remote-open.transformers": [
+      {
+        "name": "Open in Explorer",
+        "rule": "exp_://${mapped}"
+      },
+      {
+        "name": "Open in Custom Editor",
+        "rule": "my-editor-uri://${mapped}"
+      }
+    ]
+    ```
+    In the `rule`, `${mapped}` will be replaced with the mapped local path.
 
-## Extension Settings
+## Usage
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
+1.  Configure your path mappings in the settings.
+2.  (Optional) Configure your transformers for custom actions.
+3.  Right-click on a file or folder in a remote explorer.
+4.  Select one of the "Remote Open" context menu options:
+    *   **Copy Local Mapped Path:** Copies the plain local path.
+    *   **Transform and Copy...:** Shows a dropdown of your configured transformers. Selecting one will apply the rule and copy the result to the clipboard.
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
+### 0.1.0
 
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+Initial release of Remote Open, with support for path mapping and custom transformers.
