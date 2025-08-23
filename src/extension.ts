@@ -8,6 +8,11 @@ interface Mapping {
     local: string;
 }
 
+interface Transformer {
+    name: string;
+    rule: string;
+}
+
 let cachedMappings: Mapping[] = [];
 
 async function loadMappings(): Promise<Mapping[]> {
@@ -55,18 +60,31 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    const openCommand = vscode.commands.registerCommand('remote-open.openMappedPath', async (uri: vscode.Uri) => {
+    const applyTransformerCommand = vscode.commands.registerCommand('remote-open.applyTransformer', async (uri: vscode.Uri) => {
         const mappedPath = getMappedPath(uri);
-        if (mappedPath) {
-            try {
-                const localUri = vscode.Uri.file(mappedPath);
-                const externalUri = await vscode.env.asExternalUri(localUri);
-                await vscode.env.openExternal(externalUri);
-            } catch (error) {
-                vscode.window.showErrorMessage(`Error opening path: ${(error as Error).message}`);
-            }
-        } else {
+        if (!mappedPath) {
             vscode.window.showWarningMessage('No local mapping found for this remote path.');
+            return;
+        }
+
+        const config = vscode.workspace.getConfiguration('remote-open');
+        const transformers = config.get<Transformer[]>('transformers');
+
+        if (!transformers || transformers.length === 0) {
+            vscode.window.showWarningMessage('No transformers configured. Please check your settings.');
+            return;
+        }
+
+        const transformerNames = transformers.map(t => t.name);
+        const selectedName = await vscode.window.showQuickPick(transformerNames);
+
+        if (selectedName) {
+            const selectedTransformer = transformers.find(t => t.name === selectedName);
+            if (selectedTransformer) {
+                const transformedString = selectedTransformer.rule.replace(/\${mapped}/g, mappedPath);
+                await vscode.env.clipboard.writeText(transformedString);
+                vscode.window.showInformationMessage(`Transformed path copied to clipboard: ${transformedString}`);
+            }
         }
     });
 
@@ -81,7 +99,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    context.subscriptions.push(copyCommand, openCommand, fileWatcher);
+    context.subscriptions.push(copyCommand, applyTransformerCommand, fileWatcher);
 }
 
 export function deactivate() {}

@@ -18,8 +18,8 @@
         "title": "Remote Open: Copy Local Mapped Path"
       },
       {
-        "command": "remote-open.openMappedPath",
-        "title": "Remote Open: Open Local Mapped Path"
+        "command": "remote-open.applyTransformer",
+        "title": "Remote Open: Transform and Copy..."
       }
     ],
     "menus": {
@@ -31,8 +31,8 @@
         },
         {
           "when": "resourceScheme == 'vscode-remote'",
-          "command": "remote-open.openMappedPath",
-          "group": "remote-open@1"
+          "command": "remote-open.applyTransformer",
+          "group": "remote-open@2"
         }
       ]
     },
@@ -59,6 +59,24 @@
           "type": "string",
           "default": "",
           "description": "Path to a YAML file containing remote to local path mappings."
+        },
+        "remote-open.transformers": {
+          "type": "array",
+          "default": [],
+          "description": "An array of transformers to apply to the mapped path.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "The name of the transformer, which will be shown in the context menu."
+              },
+              "rule": {
+                "type": "string",
+                "description": "The transformation rule. Use ${mapped} as a placeholder for the mapped path."
+              }
+            }
+          }
         }
       }
     }
