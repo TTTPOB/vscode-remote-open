@@ -30,7 +30,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Package extension
-        run: pnpm dlx @vscode/vsce package --no-dependencies
+        run: pnpm vsce package --no-dependencies
 
       - name: Locate VSIX
         id: vsix
@@ -50,4 +50,4 @@ jobs:
       - name: Publish to VS Code Marketplace
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: pnpm dlx @vscode/vsce publish --packagePath "${{ steps.vsix.outputs.file }}"
+        run: pnpm vsce publish --packagePath "${{ steps.vsix.outputs.file }}"
