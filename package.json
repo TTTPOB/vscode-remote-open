@@ -9,6 +9,13 @@
     "url": "https://github.com/TTTPOB/vscode-remote-open.git"
   },
   "license": "MIT",
+  "pnpm": {
+    "ignoredBuiltDependencies": [
+      "@vscode/vsce-sign",
+      "esbuild",
+      "keytar"
+    ]
+  },
   "engines": {
     "vscode": "^1.103.0"
   },
