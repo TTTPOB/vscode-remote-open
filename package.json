@@ -4,6 +4,11 @@
   "description": "Open mapped path on local from remote file tab",
   "version": "0.1.0",
   "publisher": "tttpob",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TTTPOB/vscode-remote-open.git"
+  },
+  "license": "MIT",
   "engines": {
     "vscode": "^1.103.0"
   },
