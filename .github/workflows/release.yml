@@ -7,10 +7,12 @@ on:
 
 permissions:
   contents: write  # required for gh-release to upload assets
+  id-token: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    environment: vscode-marketplace
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,13 +43,18 @@ jobs:
           echo "file=$FILE" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: ${{ steps.vsix.outputs.file }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
       - name: Publish to VS Code Marketplace
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: pnpm vsce publish --packagePath "${{ steps.vsix.outputs.file }}"
+        run: pnpm vsce publish --azure-credential --packagePath "${{ steps.vsix.outputs.file }}"
