@@ -6,6 +6,8 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [0.1.0]
+
 - Preserve the configured local path separator style across remote mappings.
 - Match remote roots at directory boundaries and validate mapping paths.
 - Replace YAML and array mappings with a scope-mergeable settings object.

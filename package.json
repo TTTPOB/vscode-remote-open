@@ -2,7 +2,7 @@
   "name": "remote-open",
   "displayName": "remote-open",
   "description": "Open mapped path on local from remote file tab",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "publisher": "tttpob",
   "engines": {
     "vscode": "^1.103.0"
