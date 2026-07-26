@@ -1,54 +1,18 @@
 import * as vscode from 'vscode';
-import * as fs from 'fs';
-import * as yaml from 'js-yaml';
-import { getMappingValidationError, isMapping, mapRemotePath, type Mapping } from './pathMapping';
+import { mapRemotePath, parseMappingConfig, type Mapping } from './pathMapping';
 
 interface Transformer {
     name: string;
     rule: string;
 }
 
-let cachedMappings: Mapping[] = [];
-
-function getValidMappings(value: unknown, source: string): Mapping[] {
-    if (!Array.isArray(value)) {
-        vscode.window.showErrorMessage(`${source} mappings must be an array.`);
-        return [];
+function getMappings(resourceUri: vscode.Uri): Mapping[] {
+    const config = vscode.workspace.getConfiguration('remote-open', resourceUri);
+    const result = parseMappingConfig(config.get<unknown>('mappings') ?? {});
+    if (result.errors.length > 0) {
+        vscode.window.showErrorMessage(`Ignored invalid path mappings: ${result.errors.join('; ')}`);
     }
-
-    const invalidMappings = value
-        .map((mapping, index) => ({ index, error: getMappingValidationError(mapping) }))
-        .filter((result): result is { index: number; error: string } => result.error !== null);
-    if (invalidMappings.length > 0) {
-        const details = invalidMappings.map(({ index, error }) => `#${index + 1}: ${error}`).join('; ');
-        vscode.window.showErrorMessage(`Ignored invalid ${source} mappings: ${details}`);
-    }
-
-    return value.filter(isMapping);
-}
-
-function loadMappings(): Mapping[] {
-    const config = vscode.workspace.getConfiguration('remote-open');
-    const settingsMappings = getValidMappings(config.get<unknown>('mappings') || [], 'settings');
-    const yamlPath = config.get<string>('mappingFilePath');
-
-    let fileMappings: Mapping[] = [];
-    if (yamlPath) {
-        try {
-            if (fs.existsSync(yamlPath)) {
-                const fileContent = fs.readFileSync(yamlPath, 'utf8');
-                const yamlContent = yaml.load(fileContent) as { mappings?: unknown } | null;
-                if (yamlContent?.mappings !== undefined) {
-                    fileMappings = getValidMappings(yamlContent.mappings, 'YAML');
-                }
-            }
-        } catch (error) {
-            vscode.window.showErrorMessage(`Error loading mapping file: ${(error as Error).message}`);
-        }
-    }
-
-    cachedMappings = [...settingsMappings, ...fileMappings];
-    return cachedMappings;
+    return result.mappings;
 }
 
 function getMappedPath(remoteUri: vscode.Uri): string | null {
@@ -56,12 +20,10 @@ function getMappedPath(remoteUri: vscode.Uri): string | null {
         return null;
     }
 
-    return mapRemotePath(remoteUri.path, cachedMappings);
+    return mapRemotePath(remoteUri.path, getMappings(remoteUri));
 }
 
 export function activate(context: vscode.ExtensionContext) {
-    loadMappings();
-
     const copyCommand = vscode.commands.registerCommand('remote-open.copyMappedPath', async (uri?: vscode.Uri) => {
         const resourceUri = uri ?? vscode.window.activeTextEditor?.document.uri;
         const mappedPath = resourceUri ? getMappedPath(resourceUri) : null;
@@ -81,7 +43,7 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
 
-        const config = vscode.workspace.getConfiguration('remote-open');
+        const config = vscode.workspace.getConfiguration('remote-open', resourceUri);
         const transformers = config.get<Transformer[]>('transformers');
 
         if (!transformers || transformers.length === 0) {
@@ -102,13 +64,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    const onDidChangeConfiguration = vscode.workspace.onDidChangeConfiguration(e => {
-        if (e.affectsConfiguration('remote-open')) {
-            loadMappings();
-        }
-    });
-
-    context.subscriptions.push(copyCommand, applyTransformerCommand, onDidChangeConfiguration);
+    context.subscriptions.push(copyCommand, applyTransformerCommand);
 }
 
 export function deactivate() {}

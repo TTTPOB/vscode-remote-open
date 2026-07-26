@@ -10,7 +10,9 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": ["onFileSystem:vscode-remote"],
+  "activationEvents": [
+    "onFileSystem:vscode-remote"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
@@ -41,30 +43,14 @@
       "title": "Remote Open",
       "properties": {
         "remote-open.mappings": {
-          "type": "array",
-          "default": [],
-          "description": "An array of remote to local path mappings.",
-          "items": {
-            "type": "object",
-            "required": ["remote", "local"],
-            "properties": {
-              "remote": {
-                "type": "string",
-                "minLength": 1,
-                "description": "Absolute POSIX path on the remote host."
-              },
-              "local": {
-                "type": "string",
-                "minLength": 1,
-                "description": "Absolute client path prefix. Its slash style is preserved in copied paths."
-              }
-            }
+          "type": "object",
+          "scope": "machine-overridable",
+          "default": {},
+          "description": "Remote POSIX roots mapped to absolute client path prefixes. Objects merge across setting scopes.",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
           }
-        },
-        "remote-open.mappingFilePath": {
-          "type": "string",
-          "default": "",
-          "description": "Path to a YAML file containing remote to local path mappings."
         },
         "remote-open.transformers": {
           "type": "array",
@@ -102,7 +88,6 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/js-yaml": "^4.0.9",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "@types/vscode": "^1.103.0",
@@ -110,13 +95,10 @@
     "@typescript-eslint/parser": "^8.39.0",
     "@vscode/test-cli": "^0.0.11",
     "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^2.15.0",
     "esbuild": "^0.25.8",
     "eslint": "^9.32.0",
     "npm-run-all": "^4.1.5",
-    "typescript": "^5.9.2",
-    "@vscode/vsce": "^2.15.0"
-  },
-  "dependencies": {
-    "js-yaml": "^4.1.0"
+    "typescript": "^5.9.2"
   }
 }

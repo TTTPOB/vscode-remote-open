@@ -11,24 +11,14 @@ This extension provides a flexible way to handle remote file paths by mapping th
 
 This extension contributes the following settings, which you can configure in your `settings.json` file:
 
-*   `remote-open.mappings`: An array of remote-to-local path mappings.
+*   `remote-open.mappings`: An object mapping remote POSIX roots to client path prefixes.
     ```json
-    "remote-open.mappings": [
-      {
-        "remote": "/home/user/project-a",
-        "local": "C:\\Users\\user\\dev\\project-a"
-      }
-    ]
+    "remote-open.mappings": {
+      "/home/user/project-a": "C:\\Users\\user\\dev\\project-a",
+      "/var/www/html": "Z:/projects/company-website"
+    }
     ```
-    `remote` must be an absolute POSIX path. `local` must be an absolute client path and must use one separator style consistently. The extension preserves that style in copied paths, so both `Z:/projects/app` and `Z:\\projects\\app` are supported.
-
-*   `remote-open.mappingFilePath`: Path to a YAML file containing additional path mappings. This is useful for sharing mappings across a team.
-    **Example `mappings.yaml`:**
-    ```yaml
-mappings:
-  - remote: "/var/www/html"
-    local: "C:\\Users\\user\\projects\\company-website"
-    ```
+    Remote roots must be absolute POSIX paths. Client roots must be absolute paths and use one separator style consistently. The extension preserves that style, so both `Z:/projects/app` and `Z:\\projects\\app` are supported. VS Code merges mapping objects across User, Remote, Workspace, and Workspace Folder settings; a higher-priority scope overrides the same remote root.
 
 *   `remote-open.transformers`: An array of custom transformation rules.
     ```json

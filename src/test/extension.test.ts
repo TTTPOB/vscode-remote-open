@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { getMappingValidationError, mapRemotePath, type Mapping } from '../pathMapping';
+import { mapRemotePath, parseMappingConfig, type Mapping } from '../pathMapping';
 
 suite('Extension Test Suite', () => {
 	vscode.window.showInformationMessage('Start all tests.');
@@ -42,26 +42,32 @@ suite('Extension Test Suite', () => {
 		assert.strictEqual(mapRemotePath('/srv/project-old/main.ts', mappings), null);
 	});
 
-	test('keeps configured mapping precedence', () => {
+	test('uses the most specific matching root', () => {
 		const mappings: Mapping[] = [
 			{ remote: '/srv', local: 'Z:/broad' },
 			{ remote: '/srv/project', local: 'Z:/specific' },
 		];
 
-		assert.strictEqual(mapRemotePath('/srv/project/main.ts', mappings), 'Z:/broad/project/main.ts');
+		assert.strictEqual(mapRemotePath('/srv/project/main.ts', mappings), 'Z:/specific/main.ts');
 	});
 
-	test('rejects traversal paths and invalid mapping roots', () => {
+	test('parses object mappings and reports invalid entries', () => {
+		const result = parseMappingConfig({
+			'/srv/project': 'Z:/projects/project',
+			'/srv/mixed': 'Z:\\projects/mixed',
+			'/srv/relative': 'projects/relative',
+		});
+
+		assert.deepStrictEqual(result.mappings, [
+			{ remote: '/srv/project', local: 'Z:/projects/project' },
+		]);
+		assert.strictEqual(result.errors.length, 2);
+	});
+
+	test('rejects traversal paths and malformed mapping configs', () => {
 		const mappings: Mapping[] = [{ remote: '/srv/project', local: 'Z:/projects/project' }];
 
 		assert.strictEqual(mapRemotePath('/srv/project/../secret.txt', mappings), null);
-		assert.match(
-			getMappingValidationError({ remote: '/srv/project', local: 'Z:\\projects/project' }) ?? '',
-			/mix slash and backslash/,
-		);
-		assert.match(
-			getMappingValidationError({ remote: '/srv/project', local: 'projects/project' }) ?? '',
-			/absolute path/,
-		);
+		assert.deepStrictEqual(parseMappingConfig([]).errors, ['mappings must be an object']);
 	});
 });
