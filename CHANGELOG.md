@@ -6,4 +6,5 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
-- Initial release
+- Preserve the configured local path separator style across remote mappings.
+- Match remote roots at directory boundaries and validate mapping paths.

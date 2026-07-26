@@ -46,12 +46,17 @@
           "description": "An array of remote to local path mappings.",
           "items": {
             "type": "object",
+            "required": ["remote", "local"],
             "properties": {
               "remote": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "description": "Absolute POSIX path on the remote host."
               },
               "local": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "description": "Absolute client path prefix. Its slash style is preserved in copied paths."
               }
             }
           }

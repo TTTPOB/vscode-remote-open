@@ -1,12 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import * as path from 'path';
 import * as yaml from 'js-yaml';
-
-interface Mapping {
-    remote: string;
-    local: string;
-}
+import { getMappingValidationError, isMapping, mapRemotePath, type Mapping } from './pathMapping';
 
 interface Transformer {
     name: string;
@@ -15,18 +10,37 @@ interface Transformer {
 
 let cachedMappings: Mapping[] = [];
 
-async function loadMappings(): Promise<Mapping[]> {
+function getValidMappings(value: unknown, source: string): Mapping[] {
+    if (!Array.isArray(value)) {
+        vscode.window.showErrorMessage(`${source} mappings must be an array.`);
+        return [];
+    }
+
+    const invalidMappings = value
+        .map((mapping, index) => ({ index, error: getMappingValidationError(mapping) }))
+        .filter((result): result is { index: number; error: string } => result.error !== null);
+    if (invalidMappings.length > 0) {
+        const details = invalidMappings.map(({ index, error }) => `#${index + 1}: ${error}`).join('; ');
+        vscode.window.showErrorMessage(`Ignored invalid ${source} mappings: ${details}`);
+    }
+
+    return value.filter(isMapping);
+}
+
+function loadMappings(): Mapping[] {
     const config = vscode.workspace.getConfiguration('remote-open');
-    const settingsMappings = config.get<Mapping[]>('mappings') || [];
+    const settingsMappings = getValidMappings(config.get<unknown>('mappings') || [], 'settings');
     const yamlPath = config.get<string>('mappingFilePath');
 
     let fileMappings: Mapping[] = [];
-    if (yamlPath && fs.existsSync(yamlPath)) {
+    if (yamlPath) {
         try {
-            const fileContent = fs.readFileSync(yamlPath, 'utf8');
-            const yamlContent = yaml.load(fileContent) as { mappings: Mapping[] };
-            if (yamlContent && Array.isArray(yamlContent.mappings)) {
-                fileMappings = yamlContent.mappings;
+            if (fs.existsSync(yamlPath)) {
+                const fileContent = fs.readFileSync(yamlPath, 'utf8');
+                const yamlContent = yaml.load(fileContent) as { mappings?: unknown } | null;
+                if (yamlContent?.mappings !== undefined) {
+                    fileMappings = getValidMappings(yamlContent.mappings, 'YAML');
+                }
             }
         } catch (error) {
             vscode.window.showErrorMessage(`Error loading mapping file: ${(error as Error).message}`);
@@ -38,20 +52,19 @@ async function loadMappings(): Promise<Mapping[]> {
 }
 
 function getMappedPath(remoteUri: vscode.Uri): string | null {
-    const remotePath = remoteUri.fsPath;
-    for (const mapping of cachedMappings) {
-        if (remotePath.startsWith(mapping.remote)) {
-            return path.join(mapping.local, remotePath.substring(mapping.remote.length));
-        }
+    if (remoteUri.scheme !== 'vscode-remote') {
+        return null;
     }
-    return null;
+
+    return mapRemotePath(remoteUri.path, cachedMappings);
 }
 
 export function activate(context: vscode.ExtensionContext) {
     loadMappings();
 
-    const copyCommand = vscode.commands.registerCommand('remote-open.copyMappedPath', async (uri: vscode.Uri) => {
-        const mappedPath = getMappedPath(uri);
+    const copyCommand = vscode.commands.registerCommand('remote-open.copyMappedPath', async (uri?: vscode.Uri) => {
+        const resourceUri = uri ?? vscode.window.activeTextEditor?.document.uri;
+        const mappedPath = resourceUri ? getMappedPath(resourceUri) : null;
         if (mappedPath) {
             await vscode.env.clipboard.writeText(mappedPath);
             vscode.window.showInformationMessage('Copied local mapped path to clipboard.');
@@ -60,8 +73,9 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    const applyTransformerCommand = vscode.commands.registerCommand('remote-open.applyTransformer', async (uri: vscode.Uri) => {
-        const mappedPath = getMappedPath(uri);
+    const applyTransformerCommand = vscode.commands.registerCommand('remote-open.applyTransformer', async (uri?: vscode.Uri) => {
+        const resourceUri = uri ?? vscode.window.activeTextEditor?.document.uri;
+        const mappedPath = resourceUri ? getMappedPath(resourceUri) : null;
         if (!mappedPath) {
             vscode.window.showWarningMessage('No local mapping found for this remote path.');
             return;

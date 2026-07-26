@@ -20,6 +20,7 @@ This extension contributes the following settings, which you can configure in yo
       }
     ]
     ```
+    `remote` must be an absolute POSIX path. `local` must be an absolute client path and must use one separator style consistently. The extension preserves that style in copied paths, so both `Z:/projects/app` and `Z:\\projects\\app` are supported.
 
 *   `remote-open.mappingFilePath`: Path to a YAML file containing additional path mappings. This is useful for sharing mappings across a team.
     **Example `mappings.yaml`:**
