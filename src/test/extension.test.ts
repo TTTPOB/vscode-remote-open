@@ -56,7 +56,7 @@ suite('Extension Test Suite', () => {
 			'/srv/project': 'Z:/projects/project',
 			'/srv/mixed': 'Z:\\projects/mixed',
 			'/srv/relative': 'projects/relative',
-		});
+		}, 'windows');
 
 		assert.deepStrictEqual(result.mappings, [
 			{ remote: '/srv/project', local: 'Z:/projects/project' },
@@ -68,6 +68,29 @@ suite('Extension Test Suite', () => {
 		const mappings: Mapping[] = [{ remote: '/srv/project', local: 'Z:/projects/project' }];
 
 		assert.strictEqual(mapRemotePath('/srv/project/../secret.txt', mappings), null);
-		assert.deepStrictEqual(parseMappingConfig([]).errors, ['mappings must be an object']);
+		assert.deepStrictEqual(parseMappingConfig([], 'windows').errors, ['mappings must be an object']);
+	});
+
+	test('validates mapping roots against the client platform', () => {
+		const windowsResult = parseMappingConfig({
+			'/srv/drive-slash': 'Z:/projects/app',
+			'/srv/drive-backslash': 'Z:\\projects\\app',
+			'/srv/unc-slash': '//server/share/app',
+			'/srv/unc-backslash': '\\\\server\\share\\app',
+			'/srv/posix': '/home/user/app',
+		}, 'windows');
+		assert.strictEqual(windowsResult.mappings.length, 4);
+		assert.match(windowsResult.errors[0], /posix path syntax/);
+
+		const posixResult = parseMappingConfig({
+			'/srv/posix': '/home/user/app',
+			'/srv/windows': 'Z:/projects/app',
+			'/srv/unc': '//server/share/app',
+		}, 'posix');
+		assert.deepStrictEqual(posixResult.mappings, [
+			{ remote: '/srv/posix', local: '/home/user/app' },
+		]);
+		assert.strictEqual(posixResult.errors.length, 2);
+		assert.ok(posixResult.errors.every(error => /windows path syntax/.test(error)));
 	});
 });

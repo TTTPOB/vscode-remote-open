@@ -8,6 +8,8 @@ export interface MappingConfigResult {
     errors: string[];
 }
 
+export type ClientPathPlatform = 'windows' | 'posix';
+
 function hasParentSegments(value: string, separator: '/' | '\\'): boolean {
     return value.split(separator).some(segment => segment === '.' || segment === '..');
 }
@@ -23,7 +25,7 @@ function getLocalSeparator(localRoot: string): '/' | '\\' | null {
     return hasBackslash ? '\\' : '/';
 }
 
-function getMappingValidationError(value: unknown): string | null {
+function getMappingValidationError(value: unknown, clientPlatform: ClientPathPlatform): string | null {
     if (!value || typeof value !== 'object') {
         return 'mapping must be an object';
     }
@@ -47,9 +49,10 @@ function getMappingValidationError(value: unknown): string | null {
         return 'local cannot mix slash and backslash separators';
     }
 
-    const isAbsolute = separator === '\\'
-        ? /^[A-Za-z]:\\/.test(mapping.local) || /^\\\\[^\\]+\\[^\\]+/.test(mapping.local)
-        : mapping.local.startsWith('/') || /^[A-Za-z]:\//.test(mapping.local);
+    const isDrivePath = /^[A-Za-z]:[\\/]/.test(mapping.local);
+    const isBackslashUncPath = /^\\\\[^\\]+\\[^\\]+/.test(mapping.local);
+    const isSlashUncPath = /^\/\/[^/]+\/[^/]+/.test(mapping.local);
+    const isAbsolute = isDrivePath || isBackslashUncPath || mapping.local.startsWith('/');
     if (!isAbsolute) {
         return 'local must be an absolute path';
     }
@@ -57,14 +60,17 @@ function getMappingValidationError(value: unknown): string | null {
         return 'local cannot contain . or .. segments';
     }
 
+    const pathPlatform = isDrivePath || isBackslashUncPath || isSlashUncPath
+        ? 'windows'
+        : 'posix';
+    if (pathPlatform !== clientPlatform) {
+        return `local uses ${pathPlatform} path syntax, but the client uses ${clientPlatform}`;
+    }
+
     return null;
 }
 
-export function isMapping(value: unknown): value is Mapping {
-    return getMappingValidationError(value) === null;
-}
-
-export function parseMappingConfig(value: unknown): MappingConfigResult {
+export function parseMappingConfig(value: unknown, clientPlatform: ClientPathPlatform): MappingConfigResult {
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
         return { mappings: [], errors: ['mappings must be an object'] };
     }
@@ -73,11 +79,11 @@ export function parseMappingConfig(value: unknown): MappingConfigResult {
     const errors: string[] = [];
     for (const [remote, local] of Object.entries(value)) {
         const mapping = { remote, local };
-        const error = getMappingValidationError(mapping);
+        const error = getMappingValidationError(mapping, clientPlatform);
         if (error) {
             errors.push(`${remote || '<empty>'}: ${error}`);
-        } else if (isMapping(mapping)) {
-            mappings.push(mapping);
+        } else {
+            mappings.push(mapping as Mapping);
         }
     }
 

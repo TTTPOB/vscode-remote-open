@@ -1,5 +1,10 @@
 import * as vscode from 'vscode';
-import { mapRemotePath, parseMappingConfig, type Mapping } from './pathMapping';
+import {
+    mapRemotePath,
+    parseMappingConfig,
+    type ClientPathPlatform,
+    type Mapping,
+} from './pathMapping';
 
 interface Transformer {
     name: string;
@@ -8,7 +13,8 @@ interface Transformer {
 
 function getMappings(resourceUri: vscode.Uri): Mapping[] {
     const config = vscode.workspace.getConfiguration('remote-open', resourceUri);
-    const result = parseMappingConfig(config.get<unknown>('mappings') ?? {});
+    const clientPlatform: ClientPathPlatform = process.platform === 'win32' ? 'windows' : 'posix';
+    const result = parseMappingConfig(config.get<unknown>('mappings') ?? {}, clientPlatform);
     if (result.errors.length > 0) {
         vscode.window.showErrorMessage(`Ignored invalid path mappings: ${result.errors.join('; ')}`);
     }
